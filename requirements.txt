@@ -1,0 +1,7 @@
+streamlit
+python-dotenv
+boto3
+joblib
+pandas
+langfuse
+openai
