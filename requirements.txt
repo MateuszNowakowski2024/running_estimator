@@ -5,3 +5,4 @@ joblib
 pandas
 langfuse
 openai
+pycaret
