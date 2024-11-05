@@ -155,11 +155,11 @@ def format_prediction(prediction):
 def save_conversation_locally():
     # Use a timestamped filename for saving
     file_name = f'conversation_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
-    
+
     # Save the conversation data to a temporary file
     with open(file_name, 'w') as f:
         json.dump(st.session_state.messages, f, indent=2)
-    
+
     # Provide a download link for the user to save the file
     with open(file_name, 'rb') as f:
         st.download_button(
@@ -177,13 +177,13 @@ def save_conversation_to_s3(conversation, input_data):
     file_name = f"{timestamp}_{uuid.uuid4()}"
     conv_key = f'db/conv/{file_name}.json'
     input_key = f'db/input/{file_name}.json'
-    
+
     # Save conversation
     try:
         s3.put_object(Bucket=BUCKET_NAME, Key=conv_key, Body=json.dumps(conversation, indent=2))
     except Exception as e:
         st.error(f"An error occurred while saving conversation to S3: {e}")
-        
+
     # Save input data
     try:
         s3.put_object(Bucket=BUCKET_NAME, Key=input_key, Body=json.dumps(input_data, indent=2))
@@ -270,14 +270,19 @@ functions = [
 ]
 
 # Updated System Prompt
-system_prompt = """You are a running assistant that helps users estimate their half marathon running time. Collect the user's age category, gender, 5km tempo (in minutes per km), weight (in kg), and height (in cm). If the user doesn't know their tempo, help them calculate it by asking extra questions and providing more information.
+system_prompt = """
+You are a running assistant that helps users estimate their half marathon running time.
 
-If the user provides a tempo that is less than 3 minutes per km or more than 15 minutes per km, double-check with the user to ensure their answer is correct and in minutes per kilometer. If the user provides total time for running 5 km, help them calculate the tempo by dividing the total time by 5 and ensure the tempo is in minutes per kilometer.
+1. Start by collecting the user's age category and gender.
+2. Next, ask a separate question to gather their 5km tempo (in minutes per km).
+   - If they do not know their tempo, guide them by asking additional questions to help calculate it.
+   - If they provide a tempo under 3 or over 15 minutes per km, confirm that the input is correct and in minutes per kilometer.
+   - If they provide the total time for a 5km run, divide it by 5 to help them find the correct tempo in minutes per kilometer.
+3. After obtaining the tempo, ask for their weight (in kg) and height (in cm) in a separate question.
+4. Once all data is collected, calculate their BMI based on weight and height, share the BMI result, and then call the 'get_estimation' function with the collected data.
+"""
 
-When all the data is collected, calculate the BMI based on weight and height, provide the bmi result to the user then, call the 'get_estimation' function with the collected data."""
-
-
-#Function to handle user input and chatbot
+# Function to handle user input and chatbot
 @observe()
 def handle_user_input(user_input, client, functions):
     # Append user message to session state
@@ -319,7 +324,7 @@ def handle_user_input(user_input, client, functions):
             
             # Send the updated messages back to assistant for a final reply
             response = client.chat.completions.create(
-                model='gpt-4',
+                model='gpt-3.5-turbo',
                 messages=st.session_state.messages
             )
             final_reply = response.choices[0].message
@@ -335,11 +340,8 @@ def handle_user_input(user_input, client, functions):
             "content": assistant_message.content
         })
         st.chat_message('assistant').write(assistant_message.content)
-
-#
 # FRONT END
 #
-
 # Streamlit app
 st.title('Half Marathon Running Time Estimator :runner:')
 
@@ -348,7 +350,6 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 # Initialize Streamlit session state variables if they don't exist
 if 'mode' not in st.session_state:
     st.session_state['mode'] = None
-
 
 # Define columns for the mode selection buttons
 col1, col2 = st.columns(2)
@@ -376,13 +377,13 @@ if st.session_state['mode'] == 'ai_assist':
 
         # Initialize 'messages' key in session state if it doesn't exist
         if 'messages' not in st.session_state:
-            st.session_state['messages'] = [{"role": "system", "content": "system_prompt"}]
+            st.session_state['messages'] = [{"role": "system", "content": system_prompt}]
 
         # Start the conversation with a greeting if the messages list has only the system prompt
         if len(st.session_state.messages) == 1:
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": "Hello! I'm here to help you estimate your half marathon running time. May I ask your age and gender?"
+                "content": "Hello! I'm here to help you estimate your half marathon running time. May I ask your age category and gender?"
             })
             st.chat_message('assistant').write(st.session_state.messages[-1]['content'])
             st.rerun()
