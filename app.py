@@ -282,7 +282,7 @@ def handle_user_input(user_input, client, functions):
 
             # Send the updated messages back to the assistant
             response = client.chat.completions.create(
-                model='gpt-4',
+                model='gpt-3.5-turbo',
                 messages=st.session_state.messages
             )
             final_reply = response.choices[0].message
@@ -298,8 +298,6 @@ def handle_user_input(user_input, client, functions):
             "content": assistant_message.content
         })
         st.chat_message('assistant').write(assistant_message.content)
-
-#
 # FRONT END
 #
 
