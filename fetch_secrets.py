@@ -1,5 +1,7 @@
 import boto3
 import os
+import subprocess
+
 
 def fetch_secrets_to_env(parameter_mapping, region="eu-central-1"):
     """
@@ -29,3 +31,10 @@ if __name__ == "__main__":
 
     # Fetch secrets from the specified region and set them as environment variables
     fetch_secrets_to_env(parameter_mapping, region="eu-central-1")  # Change region if needed
+    
+    subprocess.run([
+        "streamlit",
+        "run",
+        "app.py",
+        "--server.port", "8502"
+    ])

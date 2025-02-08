@@ -3,3 +3,13 @@ base = "dark"
 font = "sans serif"
 primaryColor = "#FFFFFF"
 textColor = "#D4D1EA"
+
+[server]
+headless = true
+port = 8502
+enableCORS = false
+fileWatcherType = "poll"
+
+[browser]
+serverAddress = "127.0.0.1"
+
